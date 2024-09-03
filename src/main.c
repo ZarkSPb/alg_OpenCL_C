@@ -232,9 +232,9 @@ int main() {
 
 
         // Формируем полный путь и записываем BMP
-        path_len = strlen(PROCFOLDER) + 1 + strlen(filename_without_ext) + 8;
-        snprintf(path, path_len, "%s%s_loc.bmp", PROCFOLDER, filename_without_ext);
-        save_buffer_bmp(path, result, WIDTH, HEIGHT);
+        // path_len = strlen(PROCFOLDER) + 1 + strlen(filename_without_ext) + 8;
+        // snprintf(path, path_len, "%s%s_loc.bmp", PROCFOLDER, filename_without_ext);
+        // save_buffer_bmp(path, result, WIDTH, HEIGHT);
 
         // Освобождаем память загруженного изображения
         free(img16_flat);
@@ -248,8 +248,8 @@ int main() {
     microseconds = end_all.tv_usec - start_all.tv_usec;
     elapsed = seconds + microseconds*1e-6;
 
-    printf("Time = %fs ... fps = %f\n", elapsed, file_count / elapsed);
-    printf("Time clear = %fs ... fps clear = %f\n", time_clear, file_count / time_clear);
+    printf("Time = %fs ... fps = %f\n", elapsed, c / elapsed);
+    printf("Time clear = %fs ... fps clear = %f\n", time_clear, c / time_clear);
 
     // Освобождение памяти в file_names
     for (int i = 0; i < file_count; i++) {
