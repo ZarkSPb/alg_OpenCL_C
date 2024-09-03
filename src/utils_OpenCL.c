@@ -1,8 +1,13 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <OpenCL/opencl.h>
 #include "utils_OpenCL.h"
 
-#define PATHTOCL "src/resize.cl"  // Замените на путь к OpenCL файлу
+#define PATHTOCL "src/resize.cl"
+
+cl_context context;
+cl_command_queue queue;
+cl_program program;
 
 cl_platform_id* get_opencl_platforms(cl_uint *num_platforms) {
     cl_int status;

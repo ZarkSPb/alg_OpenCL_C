@@ -108,7 +108,7 @@ int main() {
         // printf("%d ... %s\n", i, fn);
         // Проверяем расширение файла
         if (!check_extension(fn, EXTENSION)) { continue; }
-        char *filename_without_ext = get_filename_without_extension(fn);
+        filename_without_ext = get_filename_without_extension(fn);
 
         // Получам путь к файлу RAW
         path_len = strlen(RAWPATH) + strlen(fn) + 2;
@@ -220,9 +220,9 @@ int main() {
 
 
         // Формируем полный путь и записываем BMP
-        // path_len = strlen(PROCFOLDER) + 1 + strlen(filename_without_ext) + 8;
-        // snprintf(path, path_len, "%s%s_loc.bmp", PROCFOLDER, filename_without_ext);
-        // save_buffer_bmp(path, result, WIDTH, HEIGHT);
+        path_len = strlen(PROCFOLDER) + 1 + strlen(filename_without_ext) + 8;
+        snprintf(path, path_len, "%s%s_loc.bmp", PROCFOLDER, filename_without_ext);
+        save_buffer_bmp(path, result, WIDTH, HEIGHT);
 
         // Освобождаем память загруженного изображения
         free(img16_flat);
