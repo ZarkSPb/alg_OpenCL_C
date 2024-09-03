@@ -1,10 +1,11 @@
 CC = gcc
-CFLAGS = -Wall
+CFLAGS = -Wall -O3
 TARGET = main
 SRCS = $(wildcard src/*.c)
 
-# Определение платформы
+# Определение платформы и архиектуры процессора
 UNAME_S := $(shell uname -s)
+UNAME_M := $(shell uname -m)
 
 # Настойки для каждой платформы
 ifeq ($(UNAME_S), Linux)
@@ -13,19 +14,16 @@ ifeq ($(UNAME_S), Linux)
 endif
 
 ifeq ($(UNAME_S), Darwin)
-# CFLAGS += -I /System/Library/Frameworks/OpenCL.framework/Headers
+	ifeq ($(UNAME_M), arm64)
+		CFLAGS += -mcpu=apple-m1
+	endif
 	LDFLAGS = -framework OpenCL
 endif
 
 all: $(TARGET)
 
 $(TARGET): $(SRCS)
-# $(CC) $(CFLAGS) -o $(TARGET) $(SRCS) $(LDFLAGS)
-	$(CC) $(CFLAGS) $(LDFLAGS) $(SRCS) -o $(TARGET)
+	$(CC) $(CFLAGS) -o $(TARGET) $(SRCS) $(LDFLAGS)
 
 clean:
-	rm -f $(TARGE)
-
-
-
-
+	rm -f $(TARGET)
