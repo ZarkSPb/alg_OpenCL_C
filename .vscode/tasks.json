@@ -1,0 +1,20 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build OpenCL project",
+            "type": "shell",
+            "command": "clang",
+            "args": [
+                "-framework", "OpenCL",
+                "src/*.c",
+                "-o", "main"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": ["$gcc"]
+        }
+    ]
+}

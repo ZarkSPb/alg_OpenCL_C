@@ -1,0 +1,21 @@
+Apple Silicon M1
+clang -O3 -mcpu=apple-m1 -o first src/*.c
+clang -O3 -mcpu=apple-m1 -framework OpenCL -o main src/*.c
+
+Khadas VIM 3 Pro:
+clang -O3 -march=armv8-a -mtune=cortex-a73 -o first src/*.c
+
+Rockchip RK3588:
+clang -O3 -march=armv8.2-a -mcpu=cortex-a76 -mtune=cortex-a76 -o first src/*.c
+
+Intel Atom x7425E:
+clang -O3 -march=atom -mtune=atom -o first src/*.c
+
+Intel Core i3-N305:
+clang -O3 -march=alderlake -mtune=alderlake -o first src/*.c
+
+Intel Core i7-8650U:
+clang -O3 -march=skylake -mtune=skylake -o first src/*.c
+
+AMD Ryzen 7 5800HS with Radeon Graphics
+gcc -O3 -march=znver3 -mtune=znver3 -o first src\*.c
