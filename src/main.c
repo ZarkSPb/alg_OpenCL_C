@@ -64,7 +64,7 @@ int main() {
     pad_image_reflect_kernel = clCreateKernel(program, "pad_image_reflect", &status);
     if (status != CL_SUCCESS) {
         printf("Ошибка при создании ядра pad_image_reflect: %d\n", status);
-        clReleaseMemObject(lut_buff);
+        // clReleaseMemObject(lut_buff);
         return status;
     }
     // Получаем ядро для локальной нормализации (localNorm)
@@ -105,12 +105,14 @@ int main() {
     char *fn;
     unsigned short lut_short[BINS];
 
+    uint c = 0;
     gettimeofday(&start_all, NULL);
     for (int i = 0; i < file_count; i++) {
         fn = file_names[i];
         // printf("%d ... %s\n", i, fn);
         // Проверяем расширение файла
         if (!check_extension(fn, EXTENSION)) { continue; }
+        c++;
         filename_without_ext = get_filename_without_extension(fn);
 
         // Получам путь к файлу RAW
@@ -151,6 +153,8 @@ int main() {
             printf("Ошибка при чтении буфера гистограммы: %d\n", status);
             return 1;
         }
+
+        clReleaseMemObject(histogram_buff);
 
         LUT(histogram);
         // Преобразуем каждый элемент в новый тип (unsigned short)
@@ -207,6 +211,9 @@ int main() {
             return status;
         }
 
+        // Освобождение буферов
+        clReleaseMemObject(src_buff);
+        clReleaseMemObject(lut_buff);
 
         // Копирование результата обратно в host-память
         status = clEnqueueReadBuffer(queue, result_image_buff, CL_TRUE, 0, WIDTH * HEIGHT * sizeof(unsigned char), result, 0, NULL, NULL);
@@ -224,10 +231,6 @@ int main() {
         time_clear += elapsed;
 
 
-        // clock_t end = clock();
-        // double time = (double)(end - start) / CLOCKS_PER_SEC;
-
-
         // Формируем полный путь и записываем BMP
         path_len = strlen(PROCFOLDER) + 1 + strlen(filename_without_ext) + 8;
         snprintf(path, path_len, "%s%s_loc.bmp", PROCFOLDER, filename_without_ext);
@@ -237,7 +240,7 @@ int main() {
         free(img16_flat);
         
         
-        printf("%d: %f %s\n", i, elapsed, fn);
+        printf("%d: %f %s\n", c, elapsed, fn);
         // printf("%d: %s\n", i, fn);
     }
     gettimeofday(&end_all, NULL);
@@ -245,9 +248,6 @@ int main() {
     microseconds = end_all.tv_usec - start_all.tv_usec;
     elapsed = seconds + microseconds*1e-6;
 
-
-    // clock_t end_all = clock();
-    // double time_all = (double)(end_all - start_all) / CLOCKS_PER_SEC;
     printf("Time = %fs ... fps = %f\n", elapsed, file_count / elapsed);
     printf("Time clear = %fs ... fps clear = %f\n", time_clear, file_count / time_clear);
 
@@ -261,10 +261,8 @@ int main() {
     free(result);
 
     // Очистка ресурсовclReleaseMemObject(small_image_buff);
+    clReleaseMemObject(small_image_buff);
     clReleaseMemObject(result_image_buff);
-    clReleaseMemObject(src_buff);
-    clReleaseMemObject(histogram_buff);
-    clReleaseMemObject(lut_buff);
     clReleaseKernel(resize_kernel);
     clReleaseKernel(pad_image_reflect_kernel);
     clReleaseKernel(local_norm_kernel);
