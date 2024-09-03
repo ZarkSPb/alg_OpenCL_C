@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
+#include <sys/time.h>
 #include <OpenCL/opencl.h>
 #include "utils.h"
 #include "save_bmp.h"
@@ -21,6 +21,10 @@ int main() {
     const char *PROCFOLDER = "img/proc/";
     const char *RAWPATH = "../../Python/opencl/img/raw";
     const char *EXTENSION = ".raw";
+
+    struct timeval start_all, end_all, start, end;
+    long seconds, microseconds;
+    double elapsed, time_clear = 0.0;
 
     cl_int status;
     cl_mem small_image_buff, result_image_buff, src_buff, histogram_buff, lut_buff;
@@ -100,9 +104,8 @@ int main() {
     char path[1024];
     char *fn;
     unsigned short lut_short[BINS];
-    
-    clock_t time_clear = 0;
-    clock_t start_all = clock();
+
+    gettimeofday(&start_all, NULL);
     for (int i = 0; i < file_count; i++) {
         fn = file_names[i];
         // printf("%d ... %s\n", i, fn);
@@ -120,7 +123,7 @@ int main() {
         img16_flat = load_image_flatten(path, LENGTH);
 
         // NEXT - PROCESSING...
-        clock_t start = clock();
+        gettimeofday(&start, NULL);
 
         // Small image resize and histogram reading
         // Подготавливаем буффер с исходным изображением
@@ -214,9 +217,15 @@ int main() {
             return status;
         }
 
-        clock_t end = clock();
-        time_clear = time_clear + end - start;
-        double time = (double)(end - start) / CLOCKS_PER_SEC;
+        gettimeofday(&end, NULL);
+        seconds = end.tv_sec - start.tv_sec;
+        microseconds = end.tv_usec - start.tv_usec;
+        elapsed = seconds + microseconds*1e-6;
+        time_clear += elapsed;
+
+
+        // clock_t end = clock();
+        // double time = (double)(end - start) / CLOCKS_PER_SEC;
 
 
         // Формируем полный путь и записываем BMP
@@ -228,12 +237,19 @@ int main() {
         free(img16_flat);
         
         
-        printf("%d: %f %s\n", i, time, fn);
+        printf("%d: %f %s\n", i, elapsed, fn);
+        // printf("%d: %s\n", i, fn);
     }
-    clock_t end_all = clock();
-    double time_all = (double)(end_all - start_all) / CLOCKS_PER_SEC;
-    printf("Time = %fs ... fps = %f\n", time_all, file_count / time_all);
-    printf("Time clear = %fs ... fps clear = %f\n", (double) time_clear / CLOCKS_PER_SEC, (double) file_count * CLOCKS_PER_SEC / time_clear);
+    gettimeofday(&end_all, NULL);
+    seconds = end_all.tv_sec - start_all.tv_sec;
+    microseconds = end_all.tv_usec - start_all.tv_usec;
+    elapsed = seconds + microseconds*1e-6;
+
+
+    // clock_t end_all = clock();
+    // double time_all = (double)(end_all - start_all) / CLOCKS_PER_SEC;
+    printf("Time = %fs ... fps = %f\n", elapsed, file_count / elapsed);
+    printf("Time clear = %fs ... fps clear = %f\n", time_clear, file_count / time_clear);
 
     // Освобождение памяти в file_names
     for (int i = 0; i < file_count; i++) {
