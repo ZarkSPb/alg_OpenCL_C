@@ -1,13 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
-#include <OpenCL/opencl.h>
+#include <sys/time.h>
+#if defined(__APPLE__) || defined(__MACOSX)
+    #include <OpenCL/opencl.h>
+#else
+    #include <CL/cl.h>
+#endif
+
 #include "utils.h"
 #include "save_bmp.h"
 #include "utils_OpenCL.h"
 
 void LUT(unsigned int *histogram);
+
+#define SAVE 1
 
 #define WIDTH 2448
 #define HEIGHT 2048
@@ -21,6 +28,10 @@ int main() {
     const char *PROCFOLDER = "img/proc/";
     const char *RAWPATH = "../../Python/opencl/img/raw";
     const char *EXTENSION = ".raw";
+
+    struct timeval start_all, end_all, start, end;
+    long seconds, microseconds;
+    double elapsed, time_clear = 0.0;
 
     cl_int status;
     cl_mem small_image_buff, result_image_buff, src_buff, histogram_buff, lut_buff;
@@ -60,7 +71,7 @@ int main() {
     pad_image_reflect_kernel = clCreateKernel(program, "pad_image_reflect", &status);
     if (status != CL_SUCCESS) {
         printf("Ошибка при создании ядра pad_image_reflect: %d\n", status);
-        clReleaseMemObject(lut_buff);
+        // clReleaseMemObject(lut_buff);
         return status;
     }
     // Получаем ядро для локальной нормализации (localNorm)
@@ -100,15 +111,16 @@ int main() {
     char path[1024];
     char *fn;
     unsigned short lut_short[BINS];
-    
-    clock_t time_clear = 0;
-    clock_t start_all = clock();
+
+    uint c = 0;
+    gettimeofday(&start_all, NULL);
     for (int i = 0; i < file_count; i++) {
         fn = file_names[i];
         // printf("%d ... %s\n", i, fn);
         // Проверяем расширение файла
         if (!check_extension(fn, EXTENSION)) { continue; }
-        char *filename_without_ext = get_filename_without_extension(fn);
+        c++;
+        filename_without_ext = get_filename_without_extension(fn);
 
         // Получам путь к файлу RAW
         path_len = strlen(RAWPATH) + strlen(fn) + 2;
@@ -120,7 +132,7 @@ int main() {
         img16_flat = load_image_flatten(path, LENGTH);
 
         // NEXT - PROCESSING...
-        clock_t start = clock();
+        gettimeofday(&start, NULL);
 
         // Small image resize and histogram reading
         // Подготавливаем буффер с исходным изображением
@@ -148,6 +160,8 @@ int main() {
             printf("Ошибка при чтении буфера гистограммы: %d\n", status);
             return 1;
         }
+
+        clReleaseMemObject(histogram_buff);
 
         LUT(histogram);
         // Преобразуем каждый элемент в новый тип (unsigned short)
@@ -204,6 +218,9 @@ int main() {
             return status;
         }
 
+        // Освобождение буферов
+        clReleaseMemObject(src_buff);
+        clReleaseMemObject(lut_buff);
 
         // Копирование результата обратно в host-память
         status = clEnqueueReadBuffer(queue, result_image_buff, CL_TRUE, 0, WIDTH * HEIGHT * sizeof(unsigned char), result, 0, NULL, NULL);
@@ -214,26 +231,34 @@ int main() {
             return status;
         }
 
-        clock_t end = clock();
-        time_clear = time_clear + end - start;
-        double time = (double)(end - start) / CLOCKS_PER_SEC;
+        gettimeofday(&end, NULL);
+        seconds = end.tv_sec - start.tv_sec;
+        microseconds = end.tv_usec - start.tv_usec;
+        elapsed = seconds + microseconds*1e-6;
+        time_clear += elapsed;
 
 
         // Формируем полный путь и записываем BMP
-        // path_len = strlen(PROCFOLDER) + 1 + strlen(filename_without_ext) + 8;
-        // snprintf(path, path_len, "%s%s_loc.bmp", PROCFOLDER, filename_without_ext);
-        // save_buffer_bmp(path, result, WIDTH, HEIGHT);
+        if (SAVE) {
+            path_len = strlen(PROCFOLDER) + 1 + strlen(filename_without_ext) + 8;
+            snprintf(path, path_len, "%s%s_loc.bmp", PROCFOLDER, filename_without_ext);
+            save_buffer_bmp(path, result, WIDTH, HEIGHT);
+        }
 
         // Освобождаем память загруженного изображения
         free(img16_flat);
         
         
-        printf("%d: %f %s\n", i, time, fn);
+        printf("%d: %f %s\n", c, elapsed, fn);
+        // printf("%d: %s\n", i, fn);
     }
-    clock_t end_all = clock();
-    double time_all = (double)(end_all - start_all) / CLOCKS_PER_SEC;
-    printf("Time = %fs ... fps = %f\n", time_all, file_count / time_all);
-    printf("Time clear = %fs ... fps clear = %f\n", (double) time_clear / CLOCKS_PER_SEC, (double) file_count * CLOCKS_PER_SEC / time_clear);
+    gettimeofday(&end_all, NULL);
+    seconds = end_all.tv_sec - start_all.tv_sec;
+    microseconds = end_all.tv_usec - start_all.tv_usec;
+    elapsed = seconds + microseconds*1e-6;
+
+    printf("Time = %fs ... fps = %f\n", elapsed, c / elapsed);
+    printf("Time clear = %fs ... fps clear = %f\n", time_clear, c / time_clear);
 
     // Освобождение памяти в file_names
     for (int i = 0; i < file_count; i++) {
@@ -245,10 +270,8 @@ int main() {
     free(result);
 
     // Очистка ресурсовclReleaseMemObject(small_image_buff);
+    clReleaseMemObject(small_image_buff);
     clReleaseMemObject(result_image_buff);
-    clReleaseMemObject(src_buff);
-    clReleaseMemObject(histogram_buff);
-    clReleaseMemObject(lut_buff);
     clReleaseKernel(resize_kernel);
     clReleaseKernel(pad_image_reflect_kernel);
     clReleaseKernel(local_norm_kernel);

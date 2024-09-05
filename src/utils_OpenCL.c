@@ -1,8 +1,18 @@
 #include <stdio.h>
-#include <OpenCL/opencl.h>
+#include <stdlib.h>
+#if defined(__APPLE__) || defined(__MACOSX)
+    #include <OpenCL/opencl.h>
+#else
+    #include <CL/cl.h>
+#endif
+
 #include "utils_OpenCL.h"
 
-#define PATHTOCL "src/resize.cl"  // Замените на путь к OpenCL файлу
+#define PATHTOCL "src/resize.cl"
+
+cl_context context;
+cl_command_queue queue;
+cl_program program;
 
 cl_platform_id* get_opencl_platforms(cl_uint *num_platforms) {
     cl_int status;
