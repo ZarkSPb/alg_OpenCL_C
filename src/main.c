@@ -2,12 +2,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
-#include <OpenCL/opencl.h>
+#if defined(__APPLE__) || defined(__MACOSX)
+    #include <OpenCL/opencl.h>
+#else
+    #include <CL/cl.h>
+#endif
+
 #include "utils.h"
 #include "save_bmp.h"
 #include "utils_OpenCL.h"
 
 void LUT(unsigned int *histogram);
+
+#define SAVE 1
 
 #define WIDTH 2448
 #define HEIGHT 2048
@@ -232,9 +239,11 @@ int main() {
 
 
         // Формируем полный путь и записываем BMP
-        // path_len = strlen(PROCFOLDER) + 1 + strlen(filename_without_ext) + 8;
-        // snprintf(path, path_len, "%s%s_loc.bmp", PROCFOLDER, filename_without_ext);
-        // save_buffer_bmp(path, result, WIDTH, HEIGHT);
+        if (SAVE) {
+            path_len = strlen(PROCFOLDER) + 1 + strlen(filename_without_ext) + 8;
+            snprintf(path, path_len, "%s%s_loc.bmp", PROCFOLDER, filename_without_ext);
+            save_buffer_bmp(path, result, WIDTH, HEIGHT);
+        }
 
         // Освобождаем память загруженного изображения
         free(img16_flat);

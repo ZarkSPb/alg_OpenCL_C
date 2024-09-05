@@ -1,6 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <OpenCL/opencl.h>
+#if defined(__APPLE__) || defined(__MACOSX)
+    #include <OpenCL/opencl.h>
+#else
+    #include <CL/cl.h>
+#endif
+
 #include "utils_OpenCL.h"
 
 #define PATHTOCL "src/resize.cl"
