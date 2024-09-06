@@ -5,10 +5,18 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <errno.h>
+#ifdef _WIN32
+    #include <windows.h>
+#endif
 
 // int create_directory(const char *base_path, const char *folder_name) {
 int create_directory(const char *folder_name) {
-    if (mkdir(folder_name, 0700) == -1) {
+#ifdef _WIN32
+    if (mkdir(folder_name) == -1)
+#else
+    if (mkdir(folder_name, 0700) == -1)
+#endif
+    {   
         if(errno == EEXIST){
             printf("\nFolder already exist. Go NEXT.\n");
             return 0;
@@ -21,31 +29,74 @@ int create_directory(const char *folder_name) {
 }
 
 char **get_filenames(const char *directory, int *file_count) {
-    int array_size = 10; // Начальный размер массива
+    int array_size = 10;  // Начальный размер массива
     char **file_names = malloc(array_size * sizeof(char*));
 
     if (file_names == NULL) {
-        perror("Unableto allocate memory");
+        perror("Unable to allocate memory");
         return NULL;
     }
 
-    DIR *dir = opendir(directory);
-    if (dir == NULL) {
-        perror("Unable to open directory");
-        return NULL;
-    }
-
-    // Чтение содержимого директории с .raw файлами
-    struct dirent *entry;
     *file_count = 0;
-    while ((entry = readdir(dir)) != NULL) {
-        if (entry->d_type == DT_REG) { // Учитываем только файлы
+
+#ifdef _WIN32
+    WIN32_FIND_DATA find_data;
+    HANDLE hFind = INVALID_HANDLE_VALUE;
+
+    char search_path[MAX_PATH];
+    snprintf(search_path, MAX_PATH, "%s\\*.raw", directory); // Поиск файлов с расширением .raw
+
+    hFind = FindFirstFile(search_path, &find_data);
+    if (hFind == INVALID_HANDLE_VALUE) {
+        printf("Unable to open directory: %lu\n", GetLastError());
+        free(file_names);
+        return NULL;
+    }
+
+    do {
+        if (!(find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
             if (*file_count >= array_size) {
-                // Увеличение размера массива при необходимости
                 array_size *= 2;
                 char **new_file_paths = realloc(file_names, array_size * sizeof(char*));
                 if (new_file_paths == NULL) {
-                    perror("Unableto reallocate memory");
+                    perror("Unable to reallocate memory");
+                    free(file_names);
+                    FindClose(hFind);
+                    return NULL;
+                }
+                file_names = new_file_paths;
+            }
+
+            // Формирование имени файла
+            int filename_len = strlen(find_data.cFileName) + 1;
+            file_names[*file_count] = malloc(filename_len);
+            if (file_names[*file_count] == NULL) {
+                perror("Unable to allocate memory for filename");
+                break;
+            }
+            snprintf(file_names[*file_count], filename_len, "%s", find_data.cFileName);
+            (*file_count)++;
+        }
+    } while (FindNextFile(hFind, &find_data) != 0);
+
+    FindClose(hFind);
+
+#else
+    DIR *dir = opendir(directory);
+    if (dir == NULL) {
+        perror("Unable to open directory");
+        free(file_names);
+        return NULL;
+    }
+
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_type == DT_REG) {  // Учитываем только файлы
+            if (*file_count >= array_size) {
+                array_size *= 2;
+                char **new_file_paths = realloc(file_names, array_size * sizeof(char*));
+                if (new_file_paths == NULL) {
+                    perror("Unable to reallocate memory");
                     free(file_names);
                     closedir(dir);
                     return NULL;
@@ -66,6 +117,8 @@ char **get_filenames(const char *directory, int *file_count) {
     }
 
     closedir(dir);
+#endif
+
     return file_names;
 }
 

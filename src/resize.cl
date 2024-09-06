@@ -1,7 +1,3 @@
-// const sampler_t smp = CLK_NORMALIZED_COORDS_FALSE |
-//                     CLK_ADDRESS_CLAMP_TO_EDGE |
-//                     CLK_FILTER_NEAREST;
-
 constant ushort width = 306; // ширина small изображения
 constant ushort height = 256; // высота small изображения
 constant ushort bordersize = 8; // величина отступов
@@ -96,20 +92,24 @@ __kernel void localNorm(__global ushort *bmpIn,
         coord = i * new_width + x;
         // Используем vload16 для загрузки 16 байт данных
         pixel_data = vload16(0, smallImg + coord);
-        // TODO раскрыть цикл???
-        for (uchar j = 0; j < 16; j++) {
-            small_histogram[pixel_data[j]]++;
-        }
+        // for (uchar j = 0; j < 16; j++) {
+        //     small_histogram[pixel_data[j]]++;}
+        small_histogram[pixel_data.s0]++; small_histogram[pixel_data.s1]++; small_histogram[pixel_data.s2]++; small_histogram[pixel_data.s3]++;
+        small_histogram[pixel_data.s4]++; small_histogram[pixel_data.s5]++; small_histogram[pixel_data.s6]++; small_histogram[pixel_data.s7]++;
+        small_histogram[pixel_data.s8]++; small_histogram[pixel_data.s9]++; small_histogram[pixel_data.sA]++; small_histogram[pixel_data.sB]++;
+        small_histogram[pixel_data.sC]++; small_histogram[pixel_data.sD]++; small_histogram[pixel_data.sE]++; small_histogram[pixel_data.sF]++;
     }
     coord = ymax * new_width + x;
     pixel_data = vload16(0, smallImg + coord);
-    for (uchar j = 0; j < 15; j++) {
-        // small_histogram[smallImg[coord + j]]++;
-        small_histogram[pixel_data[j]]++;
-    }
-    if (small_histogram[pixel_data[15]] < 255) {
-        small_histogram[pixel_data[15]]++;
-    }
+    // for (uchar j = 0; j < 15; j++) { small_histogram[pixel_data[j]]++;
+    //     // small_histogram[smallImg[coord + j]]++; }
+    small_histogram[pixel_data.s0]++; small_histogram[pixel_data.s1]++; small_histogram[pixel_data.s2]++; small_histogram[pixel_data.s3]++;
+    small_histogram[pixel_data.s4]++; small_histogram[pixel_data.s5]++; small_histogram[pixel_data.s6]++; small_histogram[pixel_data.s7]++;
+    small_histogram[pixel_data.s8]++; small_histogram[pixel_data.s9]++; small_histogram[pixel_data.sA]++; small_histogram[pixel_data.sB]++;
+    small_histogram[pixel_data.sC]++; small_histogram[pixel_data.sD]++; small_histogram[pixel_data.sE]++;
+    if (small_histogram[pixel_data.sF] < 255) { small_histogram[pixel_data.sF]++; }
+
+    // if (small_histogram[pixel_data[15]] < 255) {small_histogram[pixel_data[15]]++;}
 
     // считаем куммулятивную гистограмму
     ushort current, current_4;
@@ -130,6 +130,5 @@ __kernel void localNorm(__global ushort *bmpIn,
             current = bmpIn[coord];
             current_4 = current >> 4;
             bmpOut[coord] = (cumhistogram[current_4] + lut[current] + current_4) >> 2;
-            // bmpOut[coord] = lut[current];
         }
 }

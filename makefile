@@ -9,6 +9,9 @@ UNAME_M := $(shell uname -m)
 
 # Настойки для каждой платформы
 ifeq ($(UNAME_S), Linux)
+	ifeq ($(UNAME_M), x86_64)
+		CFLAGS += -march=alderlake -mtune=alderlake
+	endif
 	CFLAGS += -I /usr/include
 	LDFLAGS = -L /usr/lib -lOpenCL
 endif
