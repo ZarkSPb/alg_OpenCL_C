@@ -8,7 +8,7 @@
 
 #include "utils_OpenCL.h"
 
-#define PATHTOCL "src/resize.cl"
+#define PATHTOCL "src/OpenCLglobloc/resize.cl"
 
 cl_context context;
 cl_command_queue queue;

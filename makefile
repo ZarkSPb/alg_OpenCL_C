@@ -2,6 +2,7 @@ CC = gcc
 CFLAGS = -Wall -O3
 TARGET = main
 SRCS = $(wildcard src/*.c)
+SRCSOpenCL = $(wildcard src/OpenCLglobloc/*.c)
 
 # Определение платформы и архиектуры процессора
 UNAME_S := $(shell uname -s)
@@ -23,10 +24,15 @@ ifeq ($(UNAME_S), Darwin)
 	LDFLAGS = -framework OpenCL
 endif
 
-all: $(TARGET)
 
-$(TARGET): $(SRCS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(SRCS) $(LDFLAGS)
+.PHONY: all clean rebuild
+
+# Всегда пересобирать цель
+all: rebuild
+
+# Цель для полной пересборки
+rebuild:
+	$(CC) $(CFLAGS) -o $(TARGET) $(SRCS) $(SRCSOpenCL) $(LDFLAGS)
 
 clean:
 	rm -f $(TARGET)
