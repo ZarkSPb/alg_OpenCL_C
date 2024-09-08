@@ -15,7 +15,7 @@
 
 // void LUT(unsigned int *histogram);
 
-#define SAVE 0
+#define SAVE 1
 
 #define WIDTH 2448
 #define HEIGHT 2048

@@ -101,7 +101,7 @@ double OCLproc(uint16_t *image_flat, uint8_t *result) {
     src_buff = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
         WIDTH * HEIGHT * sizeof(unsigned short), image_flat, &status);
     // Создаем массив для гистограммы и его буффер
-    unsigned int histogram[BINS] = {0}; // TODO надо каждый раз обнулять
+    unsigned int histogram[4096] = {0}; // TODO надо каждый раз обнулять
     histogram_buff = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
         sizeof(histogram), histogram, &status);
 
